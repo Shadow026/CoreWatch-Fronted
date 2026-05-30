@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreWatch - Sistema de Monitoreo</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="login-screen" class="login-screen">
+    <div class="login-card">
+        <div class="login-logo">
+            <i class="fas fa-laptop-medical"></i>
+            <h1>CoreWatch</h1>
+        </div>
+
+        <h2>Iniciar Sesión</h2>
+
+        <form id="login-form">
+            <div class="login-field">
+                <label>Usuario</label>
+                <input type="text" id="login-usuario" required>
+            </div>
+
+            <div class="login-field">
+                <label>Contraseña</label>
+                <input type="password" id="login-password" required>
+            </div>
+
+            <p id="login-error" class="login-error"></p>
+
+            <button type="submit" class="btn btn-primary login-btn">
+                Entrar
+            </button>
+        </form>
+    </div>
+</div>
+    <div class="container" id="app-container" style="display: none;">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-laptop-medical"></i>
+                <h1>CoreWatch</h1>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="#" class="nav-item" data-section="computadoras">
+                    <i class="fas fa-desktop"></i>
+                    <span>Computadoras</span>
+                </a>
+
+                <a href="#" class="nav-item" data-section="alertas">
+                    <i class="fas fa-bell"></i>
+                    <span>Alertas</span>
+                    <span class="badge"></span>
+                </a>
+
+                <a href="#" class="nav-item" data-section="reportes">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reportes</span>
+                </a>
+
+                <a href="#" class="nav-item" data-section="configuracion">
+                    <i class="fas fa-cog"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button
+                    class="btn-logout"
+                    onclick="cerrarSesion()"
+                >
+                    <i class="fas fa-sign-out-alt"></i>
+                    Cerrar sesión
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <h2 id="section-title">Dashboard Principal</h2>
+                </div>
+
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Buscar computadora...">
+                    </div>
+
+                    <div class="user-profile">
+                        <img src="https://via.placeholder.com/40" alt="Usuario">
+                        <div class="user-info-header">
+                            <span id="usuario-nombre">Usuario</span>
+                            <small id="usuario-rol">Rol</small>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section id="dashboard" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon computer">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Computadoras Activas</h3>
+                            <p class="stat-value">-</p>
+                            <span class="stat-change up"></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon healthy">
+                            <i class="fas fa-heart-pulse"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Sistema Saludable</h3>
+                            <p class="stat-value">-</p>
+                            <span class="stat-change down"></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>En Advertencia</h3>
+                            <p class="stat-value">-</p>
+                            <span class="stat-change"></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon error">
+                            <i class="fas fa-circle-xmark"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Fuera de Línea</h3>
+                            <p class="stat-value">-</p>
+                            <span class="stat-change"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Uso de CPU Global</h3>
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>Uso de RAM Global</h3>
+                        <canvas id="ramChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="quick-status">
+                    <h3>Estado Rápido de Computadoras</h3>
+                    <div class="status-list">
+                        <p class="no-data">Sin datos disponibles</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="computadoras" class="content-section">
+                <div class="section-header">
+                    <h2>Gestión de Computadoras</h2>
+                </div>
+
+                <div class="computers-grid">
+                    <p class="no-data">Sin computadoras disponibles.</p>
+                </div>
+            </section>
+
+            <section id="alertas" class="content-section">
+                <div class="section-header">
+                    <h2>Centro de Alertas</h2>
+                    <button class="btn btn-secondary" onclick="limpiarAlertas()">
+                        <i class="fas fa-trash"></i>
+                        Limpiar Todas
+                    </button>   
+                </div>
+
+                <div class="alerts-container">
+                    <p class="no-data">Sin alertas disponibles.</p>
+                </div>
+            </section>
+
+            <section id="reportes" class="content-section">
+                <div class="section-header">
+                    <h2>Reportes y Análisis</h2>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-download"></i>
+                        Exportar Reporte
+                    </button>
+                </div>
+
+                <div class="reports-container">
+                    <div class="report-card">
+                        <h3>Reporte de Salud Sistema</h3>
+                        <p class="report-description">Evaluación general del estado de todas las computadoras conectadas</p>
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <span>Computadoras Monitoreadas</span>
+                                <strong>-</strong>
+                            </div>
+                            <div class="report-stat">
+                                <span>Última Actualización</span>
+                                <strong>-</strong>
+                            </div>
+                        </div>
+                        <button class="btn btn-small">Ver Reporte</button>
+                    </div>
+
+                    <div class="report-card">
+                        <h3>Histórico de Rendimiento</h3>
+                        <p class="report-description">Análisis histórico del rendimiento durante los últimos 30 días</p>
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <span>Período</span>
+                                <strong>-</strong>
+                            </div>
+                            <div class="report-stat">
+                                <span>CPU Promedio</span>
+                                <strong>-</strong>
+                            </div>
+                        </div>
+                        <button class="btn btn-small">Ver Reporte</button>
+                    </div>
+
+                    <div class="report-card">
+                        <h3>Alertas y Eventos</h3>
+                        <p class="report-description">Registro detallado de todos los eventos y alertas generados</p>
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <span>Total de Eventos</span>
+                                <strong>-</strong>
+                            </div>
+                            <div class="report-stat">
+                                <span>Esta Semana</span>
+                                <strong>-</strong>
+                            </div>
+                        </div>
+                        <button class="btn btn-small">Ver Reporte</button>
+                    </div>
+
+                    <div class="report-card">
+                        <h3>Diagnóstico de Hardware</h3>
+                        <p class="report-description">Análisis detallado del estado de hardware de cada computadora</p>
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <span>Equipos Analizados</span>
+                                <strong>-</strong>
+                            </div>
+                            <div class="report-stat">
+                                <span>Anomalías Detectadas</span>
+                                <strong>-</strong>
+                            </div>
+                        </div>
+                        <button class="btn btn-small">Ver Reporte</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="configuracion" class="content-section">
+                <div class="section-header">
+                    <h2>Configuración del Sistema</h2>
+                </div>
+
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>Preferencias Generales</h3>
+
+                        <div class="setting-item">
+                            <label>Tema</label>
+                            <select>
+                                <option>Oscuro</option>
+                                <option>Claro</option>
+                                <option>Automático</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-item">
+                            <label>Intervalo de Actualización (segundos)</label>
+                            <input type="number" value="30" min="5" max="300">
+                        </div>
+
+                        <div class="setting-item">
+                            <label>Notificaciones</label>
+                            <input type="checkbox" checked>
+                            <span>Habilitar alertas de escritorio</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Umbrales de Alerta</h3>
+
+                        <div class="setting-item">
+                            <label>Límite de CPU (%)</label>
+                            <input type="number" value="80" min="1" max="100">
+                        </div>
+
+                        <div class="setting-item">
+                            <label>Límite de RAM (%)</label>
+                            <input type="number" value="85" min="1" max="100">
+                        </div>
+
+                        <div class="setting-item">
+                            <label>Límite de Disco (%)</label>
+                            <input type="number" value="90" min="1" max="100">
+                        </div>
+
+                        <div class="setting-item">
+                            <label>Límite de Temperatura (°C)</label>
+                            <input type="number" value="75" min="30" max="100">
+                        </div>
+                    </div>
+
+                    <div class="settings-footer">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Guardar Cambios
+                        </button>
+
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-undo"></i>
+                            Restaurar Valores
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+
+
+</html>
