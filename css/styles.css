@@ -1595,3 +1595,283 @@ html, body {
 .situation-offline span {
     color: var(--text-secondary);
 }
+
+
+
+
+/* ======================================================
+   RESPONSIVE COREWATCH - TABLET Y MÓVIL
+====================================================== */
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 230px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+
+    .computers-grid,
+    .alerts-container,
+    .reports-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .modal-card-large {
+        width: 95%;
+    }
+}
+
+@media (max-width: 768px) {
+    html,
+    body {
+        overflow: auto;
+    }
+
+    .container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 12px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo {
+        justify-content: center;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-bottom: none;
+    }
+
+    .logo h1 {
+        font-size: 20px;
+    }
+
+    .nav-menu {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 8px;
+        padding: 5px;
+    }
+
+    .nav-item {
+        min-width: max-content;
+        padding: 10px 12px;
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .nav-item:hover {
+        transform: none;
+    }
+
+    .sidebar-footer {
+        padding: 10px 5px 0;
+    }
+
+    .btn-logout {
+        max-width: 220px;
+        margin: 0 auto;
+    }
+
+    .main-content {
+        height: auto;
+        overflow: visible;
+    }
+
+    .top-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .header-right {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .search-box {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .user-profile {
+        justify-content: center;
+    }
+
+    .content-section {
+        padding: 15px;
+        overflow: visible;
+    }
+
+    .stats-grid,
+    .charts-row,
+    .computers-grid,
+    .alerts-container,
+    .reports-container {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        min-height: 110px;
+    }
+
+    .chart-container {
+        overflow-x: auto;
+    }
+
+    .chart-container canvas {
+        min-height: 250px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .computer-row {
+        width: 100%;
+    }
+
+    .computer-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .alert-header {
+        flex-wrap: wrap;
+    }
+
+    .alert-time {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .report-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-container {
+        max-width: 100%;
+    }
+
+    .settings-footer {
+        flex-direction: column;
+    }
+
+    .modal-overlay {
+        align-items: flex-start;
+        padding: 15px;
+        overflow-y: auto;
+    }
+
+    .modal-card,
+    .modal-card-large {
+        width: 100%;
+        max-width: 100%;
+        max-height: unset;
+        margin: 20px 0;
+    }
+
+    .modal-metrics,
+    .detail-charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .report-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo h1 {
+        font-size: 18px;
+    }
+
+    #section-title {
+        font-size: 19px;
+        text-align: center;
+    }
+
+    .nav-item span {
+        font-size: 12px;
+    }
+
+    .nav-item i {
+        font-size: 15px;
+    }
+
+    .stat-card {
+        flex-direction: row;
+        padding: 15px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+    }
+
+    .stat-value {
+        font-size: 26px;
+    }
+
+    .computer-metrics {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .metric .value {
+        font-size: 13px;
+    }
+
+    .btn,
+    .btn-small,
+    .btn-logout {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .login-card {
+        width: 92%;
+        padding: 24px 18px;
+    }
+
+    .login-logo h1 {
+        font-size: 22px;
+    }
+
+    .modal-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .modal-header > div {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+
+    .modal-close {
+        align-self: flex-end;
+    }
+
+    .report-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
