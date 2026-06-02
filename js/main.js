@@ -991,7 +991,7 @@ async function verDetallesComputadora(equipoId) {
               onclick="analizarEquipoIA('${equipoId}')"
             >
               <i class="fas fa-robot"></i>
-              Analizar con IA local
+              Analizar con IA
             </button>
           </div>
 
