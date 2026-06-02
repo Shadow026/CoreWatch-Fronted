@@ -2,7 +2,7 @@
 // CONFIG API
 // ======================================================
 
-const API_URL = 'https://corewatch-backend-production.up.railway.app';
+const API_URL = 'https://corewatch-backend-production.up.railway.app/api';
 
 
 // ======================================================
