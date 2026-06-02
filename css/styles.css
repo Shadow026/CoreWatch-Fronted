@@ -1875,3 +1875,162 @@ html, body {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== IA LOCAL COREWATCH ===== */
+
+.ai-actions {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.ia-content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.ia-loading,
+.ia-error {
+    text-align: center;
+    padding: 30px;
+}
+
+.ia-loading i {
+    font-size: 42px;
+    color: var(--primary-color);
+    margin-bottom: 12px;
+    animation: pulse 1.5s infinite;
+}
+
+.ia-header-result {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-radius: 10px;
+    padding: 18px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+}
+
+.ia-header-result i {
+    font-size: 34px;
+}
+
+.ia-header-result h2 {
+    margin: 0;
+}
+
+.ia-header-result p {
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.ia-saludable {
+    border-color: var(--success-color);
+}
+
+.ia-saludable i,
+.ia-saludable h2 {
+    color: var(--success-color);
+}
+
+.ia-advertencia {
+    border-color: var(--warning-color);
+}
+
+.ia-advertencia i,
+.ia-advertencia h2 {
+    color: var(--warning-color);
+}
+
+.ia-critico {
+    border-color: var(--danger-color);
+}
+
+.ia-critico i,
+.ia-critico h2 {
+    color: var(--danger-color);
+}
+
+.ia-inactivo {
+    border-color: var(--text-secondary);
+}
+
+.ia-inactivo i,
+.ia-inactivo h2 {
+    color: var(--text-secondary);
+}
+
+.ia-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.ia-summary div {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 14px;
+    border-radius: 8px;
+}
+
+.ia-summary span {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.ia-summary strong {
+    color: var(--primary-color);
+    font-size: 20px;
+}
+
+.ia-resumen {
+    background: rgba(0, 212, 255, 0.08);
+    border-left: 4px solid var(--primary-color);
+    padding: 14px;
+    border-radius: 6px;
+    color: var(--text-primary);
+}
+
+.ia-section {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.ia-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.ia-section ul,
+.ia-section ol {
+    padding-left: 22px;
+}
+
+.ia-section li {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+
+.ia-data p {
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+@media (max-width: 768px) {
+    .ia-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .ai-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

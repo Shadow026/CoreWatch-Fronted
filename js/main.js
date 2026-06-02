@@ -2,7 +2,7 @@
 // CONFIG API
 // ======================================================
 
-const API_URL = 'https://corewatch-backend-production.up.railway.app/api';
+const API_URL = 'corewatch-backend-production.up.railway.app';
 
 
 // ======================================================
@@ -985,6 +985,16 @@ async function verDetallesComputadora(equipoId) {
             </div>
           </div>
 
+          <div class="ai-actions">
+            <button
+              class="btn btn-primary"
+              onclick="analizarEquipoIA('${equipoId}')"
+            >
+              <i class="fas fa-robot"></i>
+              Analizar con IA local
+            </button>
+          </div>
+
           <div class="detail-charts-grid">
             <div class="chart-container">
               <h3>CPU Individual</h3>
@@ -1020,6 +1030,163 @@ function cerrarDetalleEquipo() {
   }
 }
 
+// ======================================================
+// IA LOCAL - FRONTEND
+// ======================================================
+
+async function analizarEquipoIA(equipoId) {
+  try {
+    abrirModalIA(`
+      <div class="ia-loading">
+        <i class="fas fa-robot"></i>
+        <h3>Analizando equipo...</h3>
+        <p>CoreWatch IA está revisando métricas, alertas y procesos.</p>
+      </div>
+    `);
+
+    const data = await fetchAPI(`/ia/diagnostico/${equipoId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        pregunta: 'Analiza este equipo y determina si es propenso a fallar.'
+      })
+    });
+
+    const html = construirDiagnosticoIA(data);
+
+    abrirModalIA(html);
+
+  } catch (error) {
+    console.error('Error IA local:', error);
+
+    abrirModalIA(`
+      <div class="ia-error">
+        <h3>No se pudo generar el diagnóstico</h3>
+        <p>Verifica que el backend esté funcionando y que exista el endpoint de IA local.</p>
+      </div>
+    `);
+  }
+}
+
+
+function construirDiagnosticoIA(data) {
+  const claseEstado = (data.estado || 'SALUDABLE').toLowerCase();
+
+  return `
+    <div class="ia-diagnostico">
+      <div class="ia-header-result ia-${claseEstado}">
+        <i class="fas fa-robot"></i>
+        <div>
+          <h2>Diagnóstico IA Local</h2>
+          <p>${data.equipo_nombre} (${data.equipo_id})</p>
+        </div>
+      </div>
+
+      <div class="ia-summary">
+        <div>
+          <span>Estado</span>
+          <strong>${data.estado}</strong>
+        </div>
+
+        <div>
+          <span>Urgencia</span>
+          <strong>${data.nivel_urgencia}</strong>
+        </div>
+
+        <div>
+          <span>Riesgo</span>
+          <strong>${data.puntaje_riesgo}/100</strong>
+        </div>
+      </div>
+
+      <p class="ia-resumen">${data.resumen}</p>
+
+      <div class="ia-section">
+        <h3>Razones del diagnóstico</h3>
+        <ul>
+          ${data.diagnostico.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="ia-section">
+        <h3>Componentes en riesgo</h3>
+        <ul>
+          ${data.componentes_en_riesgo.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="ia-section">
+        <h3>Posibles causas</h3>
+        <ul>
+          ${data.posibles_causas.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="ia-section">
+        <h3>Acciones recomendadas</h3>
+        <ol>
+          ${data.acciones_recomendadas.map(item => `<li>${item}</li>`).join('')}
+        </ol>
+      </div>
+
+      <div class="ia-section ia-data">
+        <h3>Datos analizados</h3>
+        <p>CPU: ${data.datos_analizados.cpu_pct}%</p>
+        <p>RAM: ${data.datos_analizados.ram_pct}%</p>
+        <p>Disco: ${data.datos_analizados.disco_pct}%</p>
+        <p>Temperatura: ${data.datos_analizados.temp_cpu}°C</p>
+        <p>Alertas activas: ${data.datos_analizados.alertas_activas}</p>
+        <p>Procesos sospechosos: ${data.datos_analizados.procesos_sospechosos}</p>
+      </div>
+    </div>
+  `;
+}
+
+
+function abrirModalIA(contenido) {
+  const modalExistente = document.getElementById('modal-ia-local');
+
+  if (modalExistente) {
+    modalExistente.remove();
+  }
+
+  const modal = document.createElement('div');
+
+  modal.id = 'modal-ia-local';
+
+  modal.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal-card modal-card-large">
+
+        <div class="modal-header">
+          <h2>CoreWatch IA</h2>
+
+          <button
+            class="modal-close"
+            onclick="cerrarModalIA()"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="ia-content">
+          ${contenido}
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+
+function cerrarModalIA() {
+  const modal = document.getElementById('modal-ia-local');
+
+  if (modal) {
+    modal.remove();
+  }
+}
 
 // ======================================================
 // REPORTES: VALORES PEQUEÑOS DE TARJETAS
@@ -1917,3 +2084,5 @@ window.imprimirReporteActual = imprimirReporteActual;
 window.exportarReporteActual = exportarReporteActual;
 window.cerrarSesion = cerrarSesion;
 window.limpiarAlertas = limpiarAlertas;
+window.analizarEquipoIA = analizarEquipoIA;
+window.cerrarModalIA = cerrarModalIA;
