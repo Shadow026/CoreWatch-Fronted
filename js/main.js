@@ -75,6 +75,21 @@ let cpuChart = null;
 let ramChart = null;
 let alertasGlobales = [];
 
+function formatearHoraGrafico(timestamp) {
+  return new Date(timestamp).toLocaleTimeString('es-ES');
+}
+
+function formatearFechaCompletaGrafico(timestamp) {
+  return new Date(timestamp).toLocaleString('es-ES', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
 // ======================================================
 // INIT CHARTS
 // ======================================================
@@ -98,9 +113,32 @@ function initCharts() {
           data: [],
           borderColor: '#00d4ff',
           backgroundColor: 'rgba(0,212,255,0.1)',
-          tension: 0.4
+          tension: 0.4,
+          fill: false
         }
       ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          min: 0,
+          max: 100
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            title: function(context) {
+              return context[0].label;
+            },
+            label: function(context) {
+              return `CPU: ${Number(context.parsed.y).toFixed(2)}%`;
+            }
+          }
+        }
+      }
     }
   });
 
@@ -113,16 +151,54 @@ function initCharts() {
           label: 'RAM promedio global',
           data: [],
           borderColor: '#00ff99',
-          tension: 0.4
+          tension: 0.4,
+          fill: false
         },
         {
           label: 'Referencia 100%',
           data: [],
           borderColor: '#ff4757',
-          tension: 0.4
+          tension: 0.4,
+          fill: false
         }
       ]
+    },
+    options: {
+  responsive: true,
+  maintainAspectRatio: false,
+
+  layout: {
+    padding: {
+      top: 25
     }
+  },
+
+ plugins: {
+  legend: {
+    position: 'top',
+    align: 'center',
+    labels: {
+      boxWidth: 40,
+      padding: 15
+    }
+  }
+},
+
+layout: {
+  padding: {
+    top: 20
+  }
+},
+ scales: {
+  y: {
+    min: 0,
+    max: 110,
+    ticks: {
+      stepSize: 10
+    }
+  }
+}
+}
   });
 }
 let corewatchAutoRefresh = null;
@@ -720,34 +796,67 @@ async function actualizarGraficosGlobales() {
   try {
     const datos = await fetchAPI('/global/historial');
 
-    if (!datos || datos.length === 0) return;
+    console.log('Datos globales:', datos);
+
+    if (!Array.isArray(datos) || datos.length === 0) {
+      return;
+    }
 
     datos.sort((a, b) =>
       new Date(a.timestamp) - new Date(b.timestamp)
     );
 
     const labels = datos.map(d =>
-      new Date(d.timestamp).toLocaleTimeString('es-ES')
+      formatearHoraGrafico(d.timestamp)
+    );
+
+    const fechasCompletas = datos.map(d =>
+      formatearFechaCompletaGrafico(d.timestamp)
     );
 
     if (cpuChart) {
       cpuChart.data.labels = labels;
+
       cpuChart.data.datasets[0].label = 'CPU promedio global';
+
       cpuChart.data.datasets[0].data = datos.map(d =>
         Number(d.cpu_pct || 0)
       );
+
+      cpuChart.options.plugins.tooltip.callbacks.title = function(context) {
+        const index = context[0].dataIndex;
+        return fechasCompletas[index];
+      };
+
+      cpuChart.options.plugins.tooltip.callbacks.label = function(context) {
+        return `CPU promedio global: ${Number(context.parsed.y).toFixed(2)}%`;
+      };
+
       cpuChart.update();
     }
 
     if (ramChart) {
       ramChart.data.labels = labels;
+
       ramChart.data.datasets[0].label = 'RAM promedio global';
+
       ramChart.data.datasets[0].data = datos.map(d =>
         Number(d.ram_pct || 0)
       );
 
       ramChart.data.datasets[1].label = 'Referencia 100%';
+
       ramChart.data.datasets[1].data = datos.map(() => 100);
+
+      ramChart.options.plugins.tooltip.callbacks.title = function(context) {
+        const index = context[0].dataIndex;
+        return fechasCompletas[index];
+      };
+
+      ramChart.options.plugins.tooltip.callbacks.label = function(context) {
+        const label = context.dataset.label || 'Valor';
+        return `${label}: ${Number(context.parsed.y).toFixed(2)}%`;
+      };
 
       ramChart.update();
     }
@@ -1787,12 +1896,26 @@ async function cargarGraficosDetalle(equipoId) {
       new Date(a.timestamp) - new Date(b.timestamp)
     );
 
+    const cpuLabels = cpuDatos.map(d =>
+  formatearHoraGrafico(d.timestamp)
+);
+
+const cpuFechasCompletas = cpuDatos.map(d =>
+  formatearFechaCompletaGrafico(d.timestamp)
+);
+
+const ramLabels = ramDatos.map(d =>
+  formatearHoraGrafico(d.timestamp)
+);
+
+const ramFechasCompletas = ramDatos.map(d =>
+  formatearFechaCompletaGrafico(d.timestamp)
+);
+
     new Chart(cpuCanvas, {
       type: 'line',
       data: {
-        labels: cpuDatos.map(d =>
-          new Date(d.timestamp).toLocaleTimeString('es-ES')
-        ),
+        labels: cpuLabels,
         datasets: [
           {
             label: `CPU % - ${equipoId}`,
@@ -1803,14 +1926,28 @@ async function cargarGraficosDetalle(equipoId) {
           }
         ]
       }
+      ,
+options: {
+  plugins: {
+    tooltip: {
+      callbacks: {
+        title: function(context) {
+          const index = context[0].dataIndex;
+          return cpuFechasCompletas[index];
+        },
+        label: function(context) {
+          return `CPU: ${Number(context.parsed.y).toFixed(2)}%`;
+        }
+      }
+    }
+  }
+}
     });
 
     new Chart(ramCanvas, {
       type: 'line',
       data: {
-        labels: ramDatos.map(d =>
-          new Date(d.timestamp).toLocaleTimeString('es-ES')
-        ),
+        labels: ramLabels,
         datasets: [
           {
             label: `RAM usada MB - ${equipoId}`,
@@ -1828,6 +1965,23 @@ async function cargarGraficosDetalle(equipoId) {
           }
         ]
       }
+      ,
+options: {
+  plugins: {
+    tooltip: {
+      callbacks: {
+        title: function(context) {
+          const index = context[0].dataIndex;
+          return ramFechasCompletas[index];
+        },
+        label: function(context) {
+          const label = context.dataset.label || 'Valor';
+          return `${label}: ${Number(context.parsed.y).toFixed(2)} MB`;
+        }
+      }
+    }
+  }
+}
     });
 
   } catch (error) {
