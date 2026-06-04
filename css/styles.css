@@ -2034,3 +2034,47 @@ html, body {
         justify-content: center;
     }
 }
+
+/* ===== FILTROS DE ALERTAS ===== */
+
+.alert-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.alert-filters select {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 220px;
+    outline: none;
+}
+
+.alert-filters select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+}
+
+.alert-resolved {
+    opacity: 0.55;
+    border-left-color: var(--text-secondary) !important;
+}
+
+.alert-resolved .alert-status {
+    background-color: rgba(176, 184, 193, 0.2);
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .alert-filters {
+        flex-direction: column;
+    }
+
+    .alert-filters select {
+        width: 100%;
+    }
+}

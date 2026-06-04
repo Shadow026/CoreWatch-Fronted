@@ -180,6 +180,17 @@
             </section>
 
             <section id="alertas" class="content-section">
+                <div class="alert-filters">
+                    <select id="filtro-alerta-equipo">
+                        <option value="todos">Todas las computadoras</option>
+                    </select>
+
+                    <select id="filtro-alerta-estado">
+                        <option value="activas">Alertas activas</option>
+                        <option value="resueltas">Alertas resueltas</option>
+                        <option value="todas">Todas</option>
+                    </select>
+                </div>
                 <div class="section-header">
                     <h2>Centro de Alertas</h2>
                     <button class="btn btn-secondary" onclick="limpiarAlertas()">

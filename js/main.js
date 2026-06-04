@@ -73,7 +73,7 @@ function getMockData(type) {
 
 let cpuChart = null;
 let ramChart = null;
-
+let alertasGlobales = [];
 
 // ======================================================
 // INIT CHARTS
@@ -534,24 +534,48 @@ function renderAlertas(alertas) {
 
   if (!container) return;
 
+  alertasGlobales = Array.isArray(alertas) ? alertas : [];
+
+  cargarFiltroEquiposAlertas(alertasGlobales);
+
+  const filtroEquipo =
+    document.getElementById('filtro-alerta-equipo')?.value || 'todos';
+
+  const filtroEstado =
+    document.getElementById('filtro-alerta-estado')?.value || 'activas';
+
+  let alertasFiltradas = [...alertasGlobales];
+
+  if (filtroEquipo !== 'todos') {
+    alertasFiltradas = alertasFiltradas.filter(a =>
+      String(a.equipo_id) === filtroEquipo
+    );
+  }
+
+  if (filtroEstado === 'activas') {
+    alertasFiltradas = alertasFiltradas.filter(a => !a.resuelta);
+  }
+
+  if (filtroEstado === 'resueltas') {
+    alertasFiltradas = alertasFiltradas.filter(a => a.resuelta);
+  }
+
+  const alertasActivas = alertasGlobales.filter(a => !a.resuelta);
+
+  actualizarBadgeAlertas(alertasActivas);
+
   container.innerHTML = '';
-   alertas = Array.isArray(alertas)
-  ? alertas.filter(a => !a.resuelta)
-  : [];
 
-  actualizarBadgeAlertas(alertas);
-
-  if (!alertas || alertas.length === 0) {
+  if (alertasFiltradas.length === 0) {
     container.innerHTML = `
       <p class="no-data">
-        ✅ No hay alertas activas
+        No hay alertas para este filtro
       </p>
     `;
-
     return;
   }
 
-  alertas.forEach(alerta => {
+  alertasFiltradas.forEach(alerta => {
     const fecha = alerta.timestamp
       ? new Date(alerta.timestamp)
       : null;
@@ -569,7 +593,7 @@ function renderAlertas(alertas) {
     const estado = alerta.resuelta ? 'Resuelta' : 'Activa';
 
     const html = `
-      <div class="alert-item alert-${severidad}">
+      <div class="alert-item alert-${severidad} ${alerta.resuelta ? 'alert-resolved' : ''}">
 
         <div class="alert-header">
           <span class="alert-severity">${severidad}</span>
@@ -622,6 +646,40 @@ function renderAlertas(alertas) {
 
     container.insertAdjacentHTML('beforeend', html);
   });
+}
+
+function cargarFiltroEquiposAlertas(alertas) {
+  const select = document.getElementById('filtro-alerta-equipo');
+
+  if (!select) return;
+
+  const valorActual = select.value;
+
+  const equipos = [];
+
+  alertas.forEach(alerta => {
+    if (!equipos.some(e => e.id === alerta.equipo_id)) {
+      equipos.push({
+        id: alerta.equipo_id,
+        nombre: alerta.equipo_nombre || alerta.equipo_id
+      });
+    }
+  });
+
+  select.innerHTML = `
+    <option value="todos">Todas las computadoras</option>
+  `;
+
+  equipos.forEach(equipo => {
+    select.insertAdjacentHTML(
+      'beforeend',
+      `<option value="${equipo.id}">${equipo.nombre}</option>`
+    );
+  });
+
+  if ([...select.options].some(option => option.value === valorActual)) {
+    select.value = valorActual;
+  }
 }
 
 
@@ -771,6 +829,7 @@ async function iniciarCoreWatch() {
   actualizarResumenReportes();
   iniciarConfiguracion();
   iniciarAutoRefresh();
+  iniciarFiltrosAlertas();
 
   const logoutBtn = document.querySelector('.btn-logout');
 
@@ -779,6 +838,22 @@ async function iniciarCoreWatch() {
   }
 
   console.log('✅ CoreWatch iniciado');
+}
+function iniciarFiltrosAlertas() {
+  const filtroEquipo = document.getElementById('filtro-alerta-equipo');
+  const filtroEstado = document.getElementById('filtro-alerta-estado');
+
+  if (filtroEquipo) {
+    filtroEquipo.addEventListener('change', () => {
+      renderAlertas(alertasGlobales);
+    });
+  }
+
+  if (filtroEstado) {
+    filtroEstado.addEventListener('change', () => {
+      renderAlertas(alertasGlobales);
+    });
+  }
 }
 
 // ======================================================
@@ -991,7 +1066,7 @@ async function verDetallesComputadora(equipoId) {
               onclick="analizarEquipoIA('${equipoId}')"
             >
               <i class="fas fa-robot"></i>
-              Analizar con IA
+              Analizar con IA local
             </button>
           </div>
 
