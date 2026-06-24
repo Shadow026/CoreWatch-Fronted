@@ -39,7 +39,7 @@ CoreWatch es una aplicación web para monitorear computadoras conectadas a una b
 
 ## Estructura del proyecto
 
-``text
+```text
 monitoreo-computadoras/
 │
 ├── backend/
