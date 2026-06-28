@@ -18,6 +18,7 @@ async function fetchAPI(endpoint, options = {}) {
     }, 5000);
 
     const response = await fetch(`${API_URL}${endpoint}`, {
+      credentials: 'include', // [!] Mitigación: Necesario para enviar/recibir Cookies seguras
       headers: {
         'Content-Type': 'application/json',
         ...options.headers
@@ -25,7 +26,7 @@ async function fetchAPI(endpoint, options = {}) {
       signal: controller.signal,
       ...options
     });
-
+//...
     clearTimeout(timeout);
 
     if (!response.ok) {
@@ -2128,11 +2129,6 @@ function inicializarLogin() {
         })
       });
 
-      localStorage.setItem(
-        'corewatch_user',
-        JSON.stringify(response.user)
-      );
-
       mostrarApp(response.user);
       await iniciarCoreWatch();
 
@@ -2145,20 +2141,23 @@ function inicializarLogin() {
 }
 
 
-function verificarSesion() {
-  const userStorage = localStorage.getItem('corewatch_user');
-
-  if (!userStorage) {
+async function verificarSesion() {
+  //  Mitigación: Se consulta al backend para validar la cookie de sesión en lugar de confiar en el almacenamiento local.
+  try {
+    const response = await fetchAPI('/auth/me'); 
+    
+    if (response && response.user) {
+      mostrarApp(response.user);
+      return true;
+    } else {
+      mostrarLogin();
+      return false;
+    }
+  } catch (error) {
     mostrarLogin();
     return false;
   }
-
-  const user = JSON.parse(userStorage);
-
-  mostrarApp(user);
-  return true;
 }
-
 
 function mostrarLogin() {
   const loginScreen = document.getElementById('login-screen');
@@ -2274,15 +2273,20 @@ function aplicarPermisosUsuario(rol) {
   }
 }
 
-function cerrarSesion() {
+async function cerrarSesion() {
 
   if (!confirm('¿Deseas cerrar sesión?')) {
     return;
   }
 
-  localStorage.removeItem('corewatch_user');
-  localStorage.removeItem('corewatch_config');
+  // Mitigación: Invocación al backend para destruir la cookie segura en el servidor.
+  try {
+    await fetchAPI('/logout', { method: 'POST' });
+  } catch (error) {
+    console.error('Error de red al intentar cerrar sesión:', error);
+  }
 
+  localStorage.removeItem('corewatch_config'); 
   sessionStorage.clear();
 
   mostrarLogin();
