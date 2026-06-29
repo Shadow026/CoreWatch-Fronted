@@ -4,7 +4,6 @@
 
 const API_URL = 'https://corewatch-backend-production.up.railway.app/api';
 
-
 // ======================================================
 // FETCH API
 // ======================================================
@@ -12,16 +11,14 @@ const API_URL = 'https://corewatch-backend-production.up.railway.app/api';
 async function fetchAPI(endpoint, options = {}) {
   try {
     const controller = new AbortController();
-
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 5000);
+    const timeout = setTimeout(() => { controller.abort(); }, 5000);
 
     const response = await fetch(`${API_URL}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers
       },
+      credentials: 'include', // NUEVO: Obligatorio para enviar la cookie
       signal: controller.signal,
       ...options
     });
@@ -920,15 +917,82 @@ async function actualizarGraficoRAM(equipoId) {
 // INIT
 // ======================================================
 
+
 document.addEventListener('DOMContentLoaded', async () => {
   inicializarLogin();
 
-  const sesionActiva = verificarSesion();
+  const sesionActiva = await verificarSesion(); // Ahora es asíncrono
 
   if (!sesionActiva) return;
 
   await iniciarCoreWatch();
 });
+
+// ======================================================
+// LOGIN Y SESIÓN 
+// ======================================================
+function inicializarLogin() {
+  const form = document.getElementById('login-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const usuario = document.getElementById('login-usuario').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    const errorBox = document.getElementById('login-error');
+
+    try {
+      const response = await fetchAPI('/login', {
+        method: 'POST',
+        body: JSON.stringify({ usuario, password })
+      });
+
+      mostrarApp(response.user);
+      await iniciarCoreWatch();
+
+    } catch (error) {
+      if (errorBox) {
+        errorBox.textContent = 'Usuario o contraseña incorrectos';
+      }
+    }
+  });
+}
+
+async function verificarSesion() {
+  try {
+    const response = await fetchAPI('/auth/me');
+    
+    if (response && response.success && response.user) {
+      mostrarApp(response.user);
+      return true;
+    }
+  } catch (error) {
+    console.warn('Sesión no encontrada o expirada');
+  }
+
+  mostrarLogin();
+  return false;
+}
+
+// CERRAR SESIÓN (Modificado para destruir la cookie)
+async function cerrarSesion() {
+  if (!confirm('¿Deseas cerrar sesión?')) {
+    return;
+  }
+
+  try {
+    await fetchAPI('/logout', { method: 'POST' });
+  } catch (error) {
+    console.error('Error durante el cierre de sesión en backend:', error);
+  }
+
+  // Se elimina únicamente configuración que no sea el usuario crítico
+  localStorage.removeItem('corewatch_config');
+  sessionStorage.clear();
+  
+  mostrarLogin();
+  location.reload();
+}
 
 async function iniciarCoreWatch() {
   console.log('📊 Inicializando dashboard...');
