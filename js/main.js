@@ -4,7 +4,6 @@
 
 const API_URL = 'https://corewatch-backend-production.up.railway.app/api';
 
-
 // ======================================================
 // FETCH API
 // ======================================================
@@ -12,16 +11,14 @@ const API_URL = 'https://corewatch-backend-production.up.railway.app/api';
 async function fetchAPI(endpoint, options = {}) {
   try {
     const controller = new AbortController();
-
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 5000);
+    const timeout = setTimeout(() => { controller.abort(); }, 5000);
 
     const response = await fetch(`${API_URL}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers
       },
+      credentials: 'include', // NUEVO: Obligatorio para enviar la cookie
       signal: controller.signal,
       ...options
     });
@@ -43,6 +40,18 @@ async function fetchAPI(endpoint, options = {}) {
   }
 }
 
+// ======================================================
+// UTILIDAD DE SEGURIDAD 
+// ======================================================
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 // ======================================================
 // DATOS MOCK
@@ -472,14 +481,15 @@ function renderComputadoras(equipos) {
     const situacion = obtenerSituacionEquipo(equipo);
     const detalleSituacion = obtenerDetalleSituacion(equipo);
     const html = `
+
       <div
         class="computer-row"
-        data-equipo-id="${equipo.equipo_id}"
+        data-equipo-id="${escapeHTML(equipo.equipo_id)}"
       >
 
         <div class="computer-info">
-          <h4>${equipo.nombre}</h4>
-          <p>${equipo.ip || 'Sin IP'}</p>
+          <h4>${escapeHTML(equipo.nombre)}</h4>
+          <p>${escapeHTML(equipo.ip || 'Sin IP')}</p>
         </div>
 
         <div class="computer-metrics">
@@ -528,7 +538,7 @@ function renderComputadoras(equipos) {
 
         <button
           class="btn-small"
-          onclick="verDetallesComputadora('${equipo.equipo_id}')"
+          onclick="verDetallesComputadora('${escapeHTML(equipo.equipo_id)}')"
         >
           Ver Detalles
         </button>
@@ -588,7 +598,7 @@ function renderEstadoRapido(equipos) {
         <span class="status-indicator"></span>
 
         <div class="status-info">
-          <h4>${equipo.nombre}</h4>
+          <h4>${escapeHTML(equipo.nombre)}</h4>
           <p>${estadoTexto} | CPU ${Number(equipo.cpu_pct || 0).toFixed(1)}%</p>
         </div>
 
@@ -678,19 +688,19 @@ function renderAlertas(alertas) {
         </div>
 
         <div class="alert-content">
-          <h4>${alerta.tipo}</h4>
+          <h4>${escapeHTML(alerta.tipo)}</h4>
 
           <p>
             <strong>Computadora:</strong>
-            ${alerta.equipo_nombre || alerta.equipo_id}
+            ${escapeHTML(alerta.equipo_nombre || alerta.equipo_id)}
           </p>
 
           <p>
             <strong>ID Equipo:</strong>
-            ${alerta.equipo_id}
+            ${escapeHTML(alerta.equipo_id)}
           </p>
 
-          <p>${alerta.descripcion}</p>
+          <p>${escapeHTML(alerta.descripcion)}</p>
 
           <div class="alert-values">
             <span>
@@ -749,7 +759,7 @@ function cargarFiltroEquiposAlertas(alertas) {
   equipos.forEach(equipo => {
     select.insertAdjacentHTML(
       'beforeend',
-      `<option value="${equipo.id}">${equipo.nombre}</option>`
+      `<option value="${escapeHTML(equipo.id)}">${escapeHTML(equipo.nombre)}</option>`
     );
   });
 
@@ -907,15 +917,82 @@ async function actualizarGraficoRAM(equipoId) {
 // INIT
 // ======================================================
 
+
 document.addEventListener('DOMContentLoaded', async () => {
   inicializarLogin();
 
-  const sesionActiva = verificarSesion();
+  const sesionActiva = await verificarSesion(); // Ahora es asíncrono
 
   if (!sesionActiva) return;
 
   await iniciarCoreWatch();
 });
+
+// ======================================================
+// LOGIN Y SESIÓN 
+// ======================================================
+function inicializarLogin() {
+  const form = document.getElementById('login-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const usuario = document.getElementById('login-usuario').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    const errorBox = document.getElementById('login-error');
+
+    try {
+      const response = await fetchAPI('/login', {
+        method: 'POST',
+        body: JSON.stringify({ usuario, password })
+      });
+
+      mostrarApp(response.user);
+      await iniciarCoreWatch();
+
+    } catch (error) {
+      if (errorBox) {
+        errorBox.textContent = 'Usuario o contraseña incorrectos';
+      }
+    }
+  });
+}
+
+async function verificarSesion() {
+  try {
+    const response = await fetchAPI('/auth/me');
+    
+    if (response && response.success && response.user) {
+      mostrarApp(response.user);
+      return true;
+    }
+  } catch (error) {
+    console.warn('Sesión no encontrada o expirada');
+  }
+
+  mostrarLogin();
+  return false;
+}
+
+// CERRAR SESIÓN (Modificado para destruir la cookie)
+async function cerrarSesion() {
+  if (!confirm('¿Deseas cerrar sesión?')) {
+    return;
+  }
+
+  try {
+    await fetchAPI('/logout', { method: 'POST' });
+  } catch (error) {
+    console.error('Error durante el cierre de sesión en backend:', error);
+  }
+
+  // Se elimina únicamente configuración que no sea el usuario crítico
+  localStorage.removeItem('corewatch_config');
+  sessionStorage.clear();
+  
+  mostrarLogin();
+  location.reload();
+}
 
 async function iniciarCoreWatch() {
   console.log('📊 Inicializando dashboard...');
@@ -1096,10 +1173,213 @@ function iniciarBuscador() {
 // DETALLE DE COMPUTADORA
 // ======================================================
 
+function formatearValorDetalle(valor, sufijo = '') {
+  if (valor === null || valor === undefined || valor === '') return 'N/A';
+  if (typeof valor === 'boolean') return valor ? 'Si' : 'No';
+  if (typeof valor === 'number') return `${Number(valor).toFixed(1)}${sufijo}`;
+  return `${valor}${sufijo}`;
+}
+
+function formatearFechaDetalle(valor) {
+  return valor
+    ? new Date(valor).toLocaleString('es-ES')
+    : 'N/A';
+}
+
+function renderDetalleVacio(texto) {
+  return `<p class="detail-empty">${escapeHTML(texto)}</p>`;
+}
+
+function renderDetalleGrid(items) {
+  return `
+    <div class="detail-info-grid">
+      ${items.map(item => `
+        <div class="detail-info-item">
+          <span>${escapeHTML(item.label)}</span>
+          <strong>${escapeHTML(formatearValorDetalle(item.value, item.suffix || ''))}</strong>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderDetalleTable(headers, rows, emptyText) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return renderDetalleVacio(emptyText);
+  }
+
+  return `
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead>
+          <tr>
+            ${headers.map(header => `<th>${escapeHTML(header.label)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(row => `
+            <tr>
+              ${headers.map(header => `
+                <td>${escapeHTML(header.format ? header.format(row[header.key], row) : formatearValorDetalle(row[header.key]))}</td>
+              `).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderDetalleAvanzado(detalle = {}) {
+  const hardware = detalle.hardware;
+  const gpuActual = Array.isArray(detalle.gpu_metricas)
+    ? detalle.gpu_metricas[0]
+    : null;
+
+  return `
+    <div class="detail-advanced">
+      <section class="detail-panel">
+        <h3><i class="fas fa-microchip"></i> Hardware</h3>
+        ${hardware ? renderDetalleGrid([
+          { label: 'CPU', value: hardware.cpu_modelo },
+          { label: 'Fabricante CPU', value: hardware.cpu_fabricante },
+          { label: 'Nucleos', value: hardware.cpu_nucleos },
+          { label: 'Hilos', value: hardware.cpu_hilos },
+          { label: 'GPU', value: hardware.gpu_modelo },
+          { label: 'VRAM', value: hardware.gpu_memoria_mb, suffix: ' MB' },
+          { label: 'Placa base', value: hardware.placa_base },
+          { label: 'BIOS', value: hardware.bios_version },
+          { label: 'RAM tipo', value: hardware.ram_tipo },
+          { label: 'RAM slots', value: hardware.ram_slots },
+          { label: 'RAM velocidad', value: hardware.ram_velocidad, suffix: ' MHz' },
+          { label: 'Escaneo', value: formatearFechaDetalle(hardware.fecha_escaneo) }
+        ]) : renderDetalleVacio('Sin datos de hardware registrados.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-hard-drive"></i> Discos</h3>
+        ${renderDetalleTable([
+          { label: 'Nombre', key: 'nombre' },
+          { label: 'Tipo', key: 'tipo' },
+          { label: 'Capacidad', key: 'capacidad_gb', format: value => `${Number(value || 0).toFixed(1)} GB` },
+          { label: 'Libre', key: 'espacio_libre_gb', format: value => `${Number(value || 0).toFixed(1)} GB` },
+          { label: 'Uso', key: 'porcentaje_usado', format: value => `${Number(value || 0).toFixed(1)}%` },
+          { label: 'Temp', key: 'temperatura', format: value => value === null || value === undefined ? 'N/A' : `${Number(value).toFixed(1)} C` },
+          { label: 'SMART', key: 'estado_smart' }
+        ], detalle.discos, 'Sin discos registrados.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-gamepad"></i> GPU</h3>
+        ${gpuActual ? renderDetalleGrid([
+          { label: 'Uso GPU', value: gpuActual.uso_gpu, suffix: '%' },
+          { label: 'Temperatura', value: gpuActual.temperatura, suffix: ' C' },
+          { label: 'Memoria usada', value: gpuActual.memoria_usada_mb, suffix: ' MB' },
+          { label: 'Memoria total', value: gpuActual.memoria_total_mb, suffix: ' MB' },
+          { label: 'Encoder', value: gpuActual.encoder, suffix: '%' },
+          { label: 'Decoder', value: gpuActual.decoder, suffix: '%' },
+          { label: 'Consumo', value: gpuActual.consumo_watts, suffix: ' W' },
+          { label: 'Muestra', value: formatearFechaDetalle(gpuActual.timestamp) }
+        ]) : renderDetalleVacio('Sin metricas de GPU registradas.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-list-check"></i> Procesos</h3>
+        ${renderDetalleTable([
+          { label: 'Nombre', key: 'nombre' },
+          { label: 'PID', key: 'pid' },
+          { label: 'CPU', key: 'cpu_pct', format: value => `${Number(value || 0).toFixed(1)}%` },
+          { label: 'RAM', key: 'ram_mb', format: value => `${Number(value || 0).toFixed(1)} MB` },
+          { label: 'Sospechoso', key: 'es_sospechoso', format: value => value ? 'Si' : 'No' },
+          { label: 'Fecha', key: 'timestamp', format: formatearFechaDetalle }
+        ], detalle.procesos, 'Sin procesos registrados.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-network-wired"></i> Interfaces de red</h3>
+        ${renderDetalleTable([
+          { label: 'Nombre', key: 'nombre' },
+          { label: 'MAC', key: 'mac' },
+          { label: 'IP', key: 'ip' },
+          { label: 'Gateway', key: 'gateway' },
+          { label: 'DNS', key: 'dns' },
+          { label: 'Velocidad', key: 'velocidad', format: value => value ? `${value} Mbps` : 'N/A' },
+          { label: 'Estado', key: 'estado', format: value => value ? 'Activa' : 'Inactiva' }
+        ], detalle.interfaces_red, 'Sin interfaces de red registradas.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-door-open"></i> Puertos abiertos</h3>
+        ${renderDetalleTable([
+          { label: 'Puerto', key: 'puerto' },
+          { label: 'Protocolo', key: 'protocolo' },
+          { label: 'Servicio', key: 'servicio' },
+          { label: 'Estado', key: 'estado' },
+          { label: 'Proceso', key: 'proceso' },
+          { label: 'PID', key: 'pid' }
+        ], detalle.puertos_abiertos, 'Sin puertos abiertos registrados.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-shield-halved"></i> Vulnerabilidades</h3>
+        ${renderDetalleTable([
+          { label: 'Tipo', key: 'tipo' },
+          { label: 'Criticidad', key: 'criticidad' },
+          { label: 'Estado', key: 'estado' },
+          { label: 'Descripcion', key: 'descripcion' },
+          { label: 'Fecha', key: 'fecha', format: formatearFechaDetalle }
+        ], detalle.vulnerabilidades, 'Sin vulnerabilidades registradas.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-clock-rotate-left"></i> Historial de hardware</h3>
+        ${renderDetalleTable([
+          { label: 'Componente', key: 'componente' },
+          { label: 'Anterior', key: 'valor_anterior' },
+          { label: 'Nuevo', key: 'valor_nuevo' },
+          { label: 'Fecha', key: 'fecha', format: formatearFechaDetalle }
+        ], detalle.historial_hardware, 'Sin cambios de hardware registrados.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-wifi"></i> Red general</h3>
+        ${renderDetalleTable([
+          { label: 'Subred', key: 'subred' },
+          { label: 'Gateway', key: 'gateway' },
+          { label: 'Hosts', key: 'total_hosts' },
+          { label: 'Online', key: 'equipos_online' },
+          { label: 'Offline', key: 'equipos_offline' },
+          { label: 'Latencia', key: 'latencia_promedio', format: value => value === null || value === undefined ? 'N/A' : `${Number(value).toFixed(1)} ms` },
+          { label: 'Estado', key: 'estado' }
+        ], detalle.red_general, 'Sin resumen de red registrado para este cliente.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-brain"></i> Analisis IA guardados</h3>
+        ${renderDetalleTable([
+          { label: 'Riesgo', key: 'riesgo' },
+          { label: 'Fallo', key: 'probabilidad_fallo', format: value => value === null || value === undefined ? 'N/A' : `${Number(value).toFixed(1)}%` },
+          { label: 'Resumen', key: 'resumen' },
+          { label: 'Modelo', key: 'modelo_ia' },
+          { label: 'Fecha', key: 'timestamp', format: formatearFechaDetalle }
+        ], detalle.analisis_ia, 'Sin analisis IA guardados.')}
+      </section>
+    </div>
+  `;
+}
+
 async function verDetallesComputadora(equipoId) {
   try {
     const equipo = await fetchAPI(`/equipos/${equipoId}`);
     const estadoLista = await fetchAPI('/estado');
+    let detalleCompleto = {};
+
+    try {
+      detalleCompleto = await fetchAPI(`/equipos/${equipoId}/detalle-completo`);
+    } catch (errorDetalle) {
+      console.warn('Detalle completo no disponible:', errorDetalle);
+      detalleCompleto = {};
+    }
 
     const estado = estadoLista.find(
       item => item.equipo_id === equipoId
@@ -1127,7 +1407,7 @@ async function verDetallesComputadora(equipoId) {
       <div class="modal-overlay">
         <div class="modal-card modal-card-large">
           <div class="modal-header">
-            <h2>Detalles del Equipo - ${equipo.nombre || equipoId}</h2>
+            <h2>Detalles del Equipo - ${escapeHTML(equipo.nombre || equipoId)}</h2>
 
             <button
               class="modal-close"
@@ -1138,10 +1418,10 @@ async function verDetallesComputadora(equipoId) {
           </div>
 
           <div class="modal-info">
-            <p><strong>Nombre:</strong> ${equipo.nombre || 'N/A'}</p>
-            <p><strong>ID:</strong> ${equipo.equipo_id || equipoId}</p>
-            <p><strong>IP:</strong> ${equipo.ip || 'Sin IP'}</p>
-            <p><strong>Sistema:</strong> ${equipo.os || 'N/A'} ${equipo.os_version || ''}</p>
+            <p><strong>Nombre:</strong> ${escapeHTML(equipo.nombre || 'N/A')}</p>
+            <p><strong>ID:</strong> ${escapeHTML(equipo.equipo_id || equipoId)}</p>
+            <p><strong>IP:</strong> ${escapeHTML(equipo.ip || 'Sin IP')}</p>
+            <p><strong>Sistema:</strong> ${escapeHTML(equipo.os || 'N/A')} ${escapeHTML(equipo.os_version || '')}</p>
             <p><strong>Estado:</strong> ${estado?.activo ? 'Activo' : 'Inactivo'}</p>
             <p><strong>Último visto:</strong> ${fechaUltimoVisto}</p>
             <p><strong>Última métrica:</strong> ${fechaMetrica}</p>
@@ -1172,12 +1452,14 @@ async function verDetallesComputadora(equipoId) {
           <div class="ai-actions">
             <button
               class="btn btn-primary"
-              onclick="analizarEquipoIA('${equipoId}')"
+              onclick="analizarEquipoIA('${escapeHTML(equipoId)}')"
             >
               <i class="fas fa-robot"></i>
               Analizar con IA local
             </button>
           </div>
+
+          ${renderDetalleAvanzado(detalleCompleto)}
 
           <div class="detail-charts-grid">
             <div class="chart-container">
@@ -1257,11 +1539,11 @@ function construirDiagnosticoIA(data) {
 
   return `
     <div class="ia-diagnostico">
-      <div class="ia-header-result ia-${claseEstado}">
+      <div class="ia-header-result ia-${escapeHTML(claseEstado)}">
         <i class="fas fa-robot"></i>
         <div>
           <h2>Diagnóstico IA Local</h2>
-          <p>${data.equipo_nombre} (${data.equipo_id})</p>
+          <p>${escapeHTML(data.equipo_nombre)} (${escapeHTML(data.equipo_id)})</p>
         </div>
       </div>
 
@@ -1282,33 +1564,33 @@ function construirDiagnosticoIA(data) {
         </div>
       </div>
 
-      <p class="ia-resumen">${data.resumen}</p>
+      <p class="ia-resumen">${escapeHTML(data.resumen)}</p>
 
       <div class="ia-section">
         <h3>Razones del diagnóstico</h3>
         <ul>
-          ${data.diagnostico.map(item => `<li>${item}</li>`).join('')}
+          ${data.diagnostico.map(item => `<li>${escapeHTML(item)}</li>`).join('')}
         </ul>
       </div>
 
       <div class="ia-section">
         <h3>Componentes en riesgo</h3>
         <ul>
-          ${data.componentes_en_riesgo.map(item => `<li>${item}</li>`).join('')}
+          ${data.componentes_en_riesgo.map(item => `<li>${escapeHTML(item)}</li>`).join('')}
         </ul>
       </div>
 
       <div class="ia-section">
         <h3>Posibles causas</h3>
         <ul>
-          ${data.posibles_causas.map(item => `<li>${item}</li>`).join('')}
+          ${data.posibles_causas.map(item => `<li>${escapeHTML(item)}</li>`).join('')}
         </ul>
       </div>
 
       <div class="ia-section">
         <h3>Acciones recomendadas</h3>
         <ol>
-          ${data.acciones_recomendadas.map(item => `<li>${item}</li>`).join('')}
+          ${data.acciones_recomendadas.map(item => `<li>${escapeHTML(item)}</li>`).join('')}
         </ol>
       </div>
 
@@ -1524,9 +1806,9 @@ async function mostrarReporteSalud() {
 
       return `
         <tr>
-          <td>${equipo.nombre}</td>
-          <td>${equipo.ip || 'Sin IP'}</td>
-          <td>${estado}</td>
+          <td>${escapeHTML(equipo.nombre)}</td>
+          <td>${escapeHTML(equipo.ip || 'Sin IP')}</td>
+          <td>${escapeHTML(estado)}</td>
           <td>${Number(equipo.cpu_pct || 0).toFixed(1)}%</td>
           <td>${Number(equipo.ram_pct || 0).toFixed(1)}%</td>
           <td>${Number(equipo.disco_pct || 0).toFixed(1)}%</td>
@@ -1579,7 +1861,7 @@ async function mostrarReporteRendimiento() {
 
     const filas = data.map(item => `
       <tr>
-        <td>${item.equipo_id}</td>
+        <td>${escapeHTML(item.equipo_id)}</td>
         <td>${Number(item.cpu_promedio || 0).toFixed(2)}%</td>
         <td>${Number(item.ram_promedio || 0).toFixed(2)}%</td>
         <td>${Number(item.disco_promedio || 0).toFixed(2)}%</td>
@@ -1632,9 +1914,9 @@ async function mostrarReporteAlertas() {
       return `
         <tr>
           <td>${fecha}</td>
-          <td>${alerta.equipo_nombre}</td>
-          <td>${alerta.tipo}</td>
-          <td>${alerta.severidad}</td>
+          <td>${escapeHTML(alerta.equipo_nombre)}</td>
+          <td>${escapeHTML(alerta.tipo)}</td>
+          <td>${escapeHTML(alerta.severidad)}</td>
           <td>${alerta.resuelta ? 'Resuelta' : 'Activa'}</td>
         </tr>
       `;
@@ -1682,9 +1964,9 @@ async function mostrarReporteHardware() {
 
     const filas = data.map(equipo => `
       <tr>
-        <td>${equipo.nombre}</td>
-        <td>${equipo.ip || 'Sin IP'}</td>
-        <td>${equipo.diagnostico}</td>
+        <td>${escapeHTML(equipo.nombre)}</td>
+        <td>${escapeHTML(equipo.ip || 'Sin IP')}</td>
+        <td>${escapeHTML(equipo.diagnostico)}</td>
         <td>${Number(equipo.cpu_promedio || 0).toFixed(2)}%</td>
         <td>${Number(equipo.ram_promedio || 0).toFixed(2)}%</td>
         <td>${Number(equipo.disco_promedio || 0).toFixed(2)}%</td>
