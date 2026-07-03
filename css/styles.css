@@ -1292,6 +1292,25 @@ html, body {
     width: 1100px;
 }
 
+#modal-detalle-equipo .modal-overlay {
+    padding: 16px;
+}
+
+#modal-detalle-equipo .modal-card-large {
+    width: min(96vw, 1500px);
+    max-height: calc(100vh - 32px);
+}
+
+#modal-detalle-equipo .modal-info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 8px;
+}
+
+#modal-detalle-equipo .modal-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -1440,6 +1459,10 @@ html, body {
     margin-top: 20px;
 }
 
+#modal-detalle-equipo .detail-advanced {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .detail-panel {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
@@ -1530,10 +1553,13 @@ html, body {
         grid-template-columns: 1fr;
     }
 
+    #modal-detalle-equipo .modal-info,
+    #modal-detalle-equipo .modal-metrics,
     .detail-advanced {
         grid-template-columns: 1fr;
     }
 
+    #modal-detalle-equipo .detail-advanced,
     .detail-info-grid {
         grid-template-columns: 1fr;
     }
