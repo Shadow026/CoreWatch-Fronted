@@ -1309,6 +1309,24 @@ function renderDetalleAvanzado(detalle = {}) {
       </section>
 
       <section class="detail-panel">
+        <h3><i class="fas fa-usb-drive"></i> Periféricos USB</h3>
+        ${renderDetalleTable([
+          { label: 'Nombre', key: 'nombre' },
+          { label: 'Tipo', key: 'tipo' },
+          { label: 'Fabricante', key: 'fabricante' },
+          { label: 'Vendor ID', key: 'vendor_id' },
+          { label: 'Product ID', key: 'product_id' },
+          { label: 'Serial', key: 'serial' },
+          { label: 'Bus', key: 'bus' },
+          { label: 'Dispositivo', key: 'direccion_dispositivo' },
+          { label: 'Puerto', key: 'ubicacion_puerto' },
+          { label: 'Velocidad', key: 'velocidad' },
+          { label: 'Conectado', key: 'conectado', format: value => value ? 'Si' : 'No' },
+          { label: 'Fecha', key: 'fecha', format: formatearFechaDetalle }
+        ], detalle.perifericos_usb, 'Sin periféricos USB registrados.')}
+      </section>
+
+      <section class="detail-panel">
         <h3><i class="fas fa-door-open"></i> Puertos abiertos</h3>
         ${renderDetalleTable([
           { label: 'Puerto', key: 'puerto' },
@@ -1352,6 +1370,26 @@ function renderDetalleAvanzado(detalle = {}) {
           { label: 'Latencia', key: 'latencia_promedio', format: value => value === null || value === undefined ? 'N/A' : `${Number(value).toFixed(1)} ms` },
           { label: 'Estado', key: 'estado' }
         ], detalle.red_general, 'Sin resumen de red registrado para este cliente.')}
+      </section>
+
+      <section class="detail-panel">
+        <h3><i class="fas fa-satellite-dish"></i> Escaneo centralizado</h3>
+        ${detalle.network_scan ? `
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">Dispositivo</span><span class="detail-value">${escapeHTML(detalle.network_scan.device_name || 'N/A')}</span></div>
+            <div class="detail-item"><span class="detail-label">Subred</span><span class="detail-value">${escapeHTML(detalle.network_scan.subnet || 'N/A')}</span></div>
+            <div class="detail-item"><span class="detail-label">Online</span><span class="detail-value">${escapeHTML(String(detalle.network_scan.online ?? 0))}</span></div>
+            <div class="detail-item"><span class="detail-label">Offline</span><span class="detail-value">${escapeHTML(String(detalle.network_scan.offline ?? 0))}</span></div>
+            <div class="detail-item"><span class="detail-label">Fecha</span><span class="detail-value">${escapeHTML(formatearFechaDetalle(detalle.network_scan.created_at))}</span></div>
+          </div>
+        ` : renderDetalleVacio('Sin escaneos centralizados registrados.')}
+
+        ${renderDetalleTable([
+          { label: 'IP', key: 'ip' },
+          { label: 'Hostname', key: 'hostname' },
+          { label: 'En linea', key: 'online', format: value => value ? 'Si' : 'No' },
+          { label: 'Latencia', key: 'latency_ms', format: value => value === null || value === undefined ? 'N/A' : `${Number(value).toFixed(0)} ms` }
+        ], detalle.network_scan_hosts, 'Sin hosts asociados al ultimo escaneo.')}
       </section>
 
       <section class="detail-panel">
