@@ -1483,7 +1483,7 @@ async function verDetallesComputadora(equipoId) {
 
             <div class="modal-metric-box">
               <small>TEMP ACTUAL</small>
-              <h3>${Number(estado?.temp_cpu || 0).toFixed(1)}°C</h3>
+              <h3>${estado?.temp_cpu != null ? Number(estado.temp_cpu).toFixed(1) + '°C' : 'N/A'}</h3>
             </div>
           </div>
 
